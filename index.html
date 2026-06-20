@@ -454,6 +454,11 @@ async function sendMsg(text){
 
 function buildQuickRow(){
   const qr=document.getElementById('quickRow');qr.innerHTML='';
+  const pb=document.createElement('button');pb.className='change-btn';pb.id='personBtn';
+  pb.style.borderColor='#84C8E8';pb.style.color='#4A90D9';
+  pb.textContent='👤 ひとを変える';
+  pb.onclick=()=>{showScreen('profileScreen');renderProfiles();};
+  qr.appendChild(pb);
   const cb=document.createElement('button');cb.className='change-btn';cb.id='changeBtn';
   cb.textContent=EMOJIS[subject]+' 教科を変える ▲';cb.onclick=togglePicker;qr.appendChild(cb);
   (QUICK[subject]||[]).forEach(q=>{
