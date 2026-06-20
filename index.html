@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>さくら先生</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Hiragino Sans','Noto Sans JP',sans-serif;background:linear-gradient(135deg,#FFF0F5 0%,#F3F0FF 50%,#FFF0FA 100%);min-height:100vh;color:#333;}
+.header{background:linear-gradient(90deg,#FF85A1,#C784E8);padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.header-av{width:40px;height:40px;background:rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.header-title{color:#fff;font-size:17px;font-weight:700;}
+.header-sub{color:rgba(255,255,255,0.88);font-size:11px;}
+.header-badge{background:rgba(255,255,255,0.25);border-radius:12px;padding:4px 10px;font-size:11px;color:#fff;margin-left:auto;text-align:right;line-height:1.6;display:none;}
+.key-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);border-radius:20px;padding:4px 10px;font-size:11px;color:#fff;cursor:pointer;margin-left:auto;white-space:nowrap;}
+
+/* APIキー設定画面 */
+.apiscreen{max-width:420px;margin:40px auto;padding:28px 24px;background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(200,120,220,0.15);text-align:center;}
+.apiscreen h2{font-size:20px;color:#C060D0;margin-bottom:10px;}
+.apiscreen p{font-size:13px;color:#777;line-height:1.8;margin-bottom:20px;}
+.api-input{width:100%;border:1.5px solid #E0C8F0;border-radius:10px;padding:10px 14px;font-size:13px;font-family:monospace;outline:none;margin-bottom:14px;}
+.api-input:focus{border-color:#C784E8;}
+.api-save{width:100%;padding:13px;background:linear-gradient(90deg,#FF85A1,#C784E8);color:#fff;border:none;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.api-note{font-size:11px;color:#aaa;margin-top:12px;}
+.api-note a{color:#C784E8;}
+
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* MENU */
+.menu-wrap{max-width:460px;margin:0 auto;padding:28px 20px;text-align:center;}
+.hero-av{width:90px;height:90px;background:linear-gradient(135deg,#FFD6E8,#E8C8FF);border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:50px;}
+.menu-title{font-size:24px;font-weight:700;background:linear-gradient(90deg,#FF5A87,#9B59CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.menu-sub{font-size:13px;color:#888;line-height:1.8;margin-bottom:24px;}
+.menu-label{font-size:13px;font-weight:600;color:#C060D0;margin-bottom:14px;}
+.subject-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
+.subj-btn{background:#fff;border:2px solid transparent;border-radius:14px;padding:16px 8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.07);display:flex;flex-direction:column;align-items:center;gap:6px;font-family:inherit;transition:all 0.15s;}
+.subj-btn:hover{border-color:#E898F0;transform:translateY(-2px);}
+.subj-btn.sel{border-color:#C060D0;background:linear-gradient(135deg,#FFF0FF,#F5F0FF);}
+.subj-btn .ic{font-size:26px;}
+.subj-btn .lb{font-size:12px;font-weight:600;color:#555;}
+.start-btn{width:100%;padding:14px;background:linear-gradient(90deg,#FF85A1,#C784E8);color:#fff;border:none;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.05em;transition:all 0.15s;}
+.start-btn:hover{transform:translateY(-2px);}
+.start-btn:disabled{background:#ddd;cursor:not-allowed;transform:none;}
+
+/* CHAT */
+.chat-wrap{max-width:600px;margin:0 auto;display:flex;flex-direction:column;height:calc(100vh - 64px);}
+.chat-subheader{padding:9px 14px;background:rgba(255,255,255,0.75);border-bottom:1px solid rgba(200,150,220,0.2);display:flex;align-items:center;gap:8px;}
+.back-btn{background:none;border:1.5px solid #ddd;border-radius:20px;padding:4px 13px;font-size:12px;color:#888;cursor:pointer;font-family:inherit;}
+.back-btn:hover{border-color:#C784E8;color:#C784E8;}
+.now-label{font-size:12px;color:#aaa;}
+.messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.msg{display:flex;gap:7px;max-width:88%;}
+.msg.user{flex-direction:row-reverse;align-self:flex-end;}
+.msg.assistant{align-self:flex-start;}
+.msg-av{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.msg.assistant .msg-av{background:linear-gradient(135deg,#FFD6E8,#E8C8FF);}
+.msg.user .msg-av{background:linear-gradient(135deg,#C8E8FF,#D0F0D0);}
+.bubble{padding:9px 13px;border-radius:16px;font-size:13px;line-height:1.75;white-space:pre-wrap;}
+.msg.assistant .bubble{background:#fff;border:1px solid rgba(200,150,220,0.25);border-top-left-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.06);color:#333;}
+.msg.user .bubble{background:linear-gradient(135deg,#FF85A1,#C784E8);color:#fff;border-top-right-radius:4px;}
+.typing-bubble{font-size:13px;color:#aaa;padding:9px 13px;background:#fff;border:1px solid rgba(200,150,220,0.25);border-radius:16px;border-top-left-radius:4px;}
+.quick-area{padding:8px 14px 4px;background:rgba(255,255,255,0.88);position:relative;}
+.subject-picker{position:absolute;bottom:44px;left:14px;background:#fff;border-radius:16px;box-shadow:0 -4px 20px rgba(0,0,0,0.13);border:1px solid rgba(200,150,220,0.3);z-index:100;padding:10px;display:none;grid-template-columns:repeat(6,1fr);gap:6px;width:calc(100% - 28px);}
+.subject-picker.open{display:grid;}
+.picker-btn{background:#f9f9f9;border:2px solid transparent;border-radius:10px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;}
+.picker-btn.sel{background:linear-gradient(135deg,#FFF0FF,#F5F0FF);border-color:#C060D0;}
+.picker-btn .pic{font-size:18px;}
+.picker-btn .plb{font-size:10px;font-weight:600;color:#555;}
+.quick-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.change-btn{border:1.5px solid #FF85A1;background:#fff;border-radius:20px;padding:4px 11px;font-size:11px;color:#FF5A87;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap;}
+.change-btn.open{background:#FFF0F5;}
+.qbtn{border:1.5px solid #E0C8F0;background:#fff;border-radius:20px;padding:4px 11px;font-size:11px;color:#9B59CC;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.qbtn:hover{background:#F8F0FF;}
+.input-area{padding:8px 14px 10px;background:rgba(255,255,255,0.88);border-top:1px solid rgba(200,150,220,0.2);display:flex;gap:7px;align-items:flex-end;}
+.voice-btn{padding:5px 11px;border:1.5px solid #E0C8F0;background:#fff;border-radius:20px;font-size:11px;color:#9B59CC;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.voice-btn.rec{background:#FFE8EE;border-color:#FF5A87;color:#FF5A87;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,90,135,0.3);}50%{box-shadow:0 0 0 5px rgba(255,90,135,0);}}
+.txt-input{flex:1;border:1.5px solid #E0C8F0;border-radius:20px;padding:9px 14px;font-size:13px;font-family:inherit;resize:none;outline:none;max-height:90px;background:#fff;line-height:1.5;}
+.txt-input:focus{border-color:#C784E8;}
+.send-btn{width:40px;height:40px;border-radius:50%;border:none;background:linear-gradient(135deg,#FF85A1,#C784E8);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.send-btn:disabled{background:#ddd;cursor:not-allowed;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-av">🌸</div>
+  <div>
+    <div class="header-title">さくら先生</div>
+    <div class="header-sub">5教科対応の家庭教師</div>
+  </div>
+  <div class="header-badge" id="studentBadge"></div>
+  <button class="key-btn" id="keyBtn" onclick="showApiScreen()" style="display:none;">🔑 APIキー</button>
+</div>
+
+<!-- APIキー設定 -->
+<div id="apiScreen">
+  <div class="apiscreen">
+    <div style="font-size:50px;margin-bottom:12px;">🌸</div>
+    <h2>さくら先生へようこそ！</h2>
+    <p>Anthropic APIキーを入力してください。<br>キーはこちらで無料取得できます👇</p>
+    <a href="https://console.anthropic.com" target="_blank" style="display:inline-block;background:#F3F0FF;color:#9B59CC;border-radius:10px;padding:8px 20px;font-size:13px;text-decoration:none;margin-bottom:18px;">console.anthropic.com を開く 🔗</a><br>
+    <input class="api-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+    <button class="api-save" onclick="saveApiKey()">さくら先生と勉強を始める！ 🍀</button>
+    <div class="api-note">キーはこの端末にのみ保存されます。他の人には見えません。</div>
+  </div>
+</div>
+
+<!-- MENU -->
+<div id="menuScreen" class="screen">
+  <div class="menu-wrap">
+    <div class="hero-av">🌸</div>
+    <div class="menu-title">さくら先生と勉強しよう！</div>
+    <div class="menu-sub">やさしくて楽しいさくら先生が<br>いろんな教科をいっしょに教えてくれるよ ✨</div>
+    <div class="menu-label">今日は何を勉強する？</div>
+    <div class="subject-grid">
+      <button class="subj-btn" data-s="国語" onclick="selectSubj(this)"><span class="ic">📖</span><span class="lb">国語</span></button>
+      <button class="subj-btn" data-s="算数" onclick="selectSubj(this)"><span class="ic">🔢</span><span class="lb">算数</span></button>
+      <button class="subj-btn" data-s="理科" onclick="selectSubj(this)"><span class="ic">🔬</span><span class="lb">理科</span></button>
+      <button class="subj-btn" data-s="社会" onclick="selectSubj(this)"><span class="ic">🗺️</span><span class="lb">社会</span></button>
+      <button class="subj-btn" data-s="英語" onclick="selectSubj(this)"><span class="ic">🔤</span><span class="lb">英語</span></button>
+      <button class="subj-btn" data-s="全部" onclick="selectSubj(this)"><span class="ic">✨</span><span class="lb">全部！</span></button>
+    </div>
+    <button class="start-btn" id="startBtn" disabled onclick="startChat()">べんきょうを始める！ 🍀</button>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="chatScreen" class="screen">
+  <div class="chat-wrap">
+    <div class="chat-subheader">
+      <button class="back-btn" onclick="goBack()">← もどる</button>
+      <span class="now-label" id="nowLabel"></span>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="quick-area" id="quickArea">
+      <div class="subject-picker" id="subjPicker">
+        <button class="picker-btn" data-s="国語" onclick="changeSubj(this)"><span class="pic">📖</span><span class="plb">国語</span></button>
+        <button class="picker-btn" data-s="算数" onclick="changeSubj(this)"><span class="pic">🔢</span><span class="plb">算数</span></button>
+        <button class="picker-btn" data-s="理科" onclick="changeSubj(this)"><span class="pic">🔬</span><span class="plb">理科</span></button>
+        <button class="picker-btn" data-s="社会" onclick="changeSubj(this)"><span class="pic">🗺️</span><span class="plb">社会</span></button>
+        <button class="picker-btn" data-s="英語" onclick="changeSubj(this)"><span class="pic">🔤</span><span class="plb">英語</span></button>
+        <button class="picker-btn" data-s="全部" onclick="changeSubj(this)"><span class="pic">✨</span><span class="plb">全部</span></button>
+      </div>
+      <div class="quick-row" id="quickRow"></div>
+    </div>
+    <div class="input-area">
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤 音声</button>
+      <textarea class="txt-input" id="txtInput" placeholder="なにか聞いてみよう！" rows="1"
+        oninput="autoResize(this);updateSend();"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMsg()" disabled>➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUICK={国語:['漢字クイズを出して','ことわざを教えて','作文の書き方','音読の練習'],算数:['かけ算クイズ！','分数を教えて','図形の問題','文章題に挑戦'],理科:['植物のしくみ','天気の種類','星座を教えて','実験を教えて'],社会:['都道府県クイズ','歴史の人物','日本地図の学習','お仕事を教えて'],英語:['英単語クイズ','ABC練習','英語で自己紹介','色の英語'],全部:['今日の一問！','ランダムクイズ','なんでも質問','得意教科を見つけよう']};
+const GRADE_TIPS={'小学1年生':'ひらがな・カタカナ中心。足し算・引き算。絵や具体例で。','小学2年生':'漢字80字。かけ算九九。やさしい文章で。','小学3年生':'漢字200字。わり算・小数。都道府県。','小学4年生':'漢字300字。分数・小数。歴史入門。','小学5年生':'漢字400字。割合・速さ・図形。歴史・国際社会。','小学6年生':'漢字500字。比・比例反比例。歴史・政治。','中学1年生':'中学レベルの言葉OK。正負の数・方程式・地理・英語基礎文法。'};
+const EMOJIS={国語:'📖',算数:'🔢',理科:'🔬',社会:'🗺️',英語:'🔤',全部:'✨'};
+
+let apiKey='',subject='',msgs=[],loading=false,isRec=false,recog=null;
+let studentName='',studentGrade='';
+
+// 起動時にAPIキー確認
+window.onload=()=>{
+  const k=localStorage.getItem('sakura_api_key');
+  if(k){apiKey=k;showMenu();}
+};
+
+function showApiScreen(){
+  document.getElementById('apiScreen').style.display='block';
+  document.getElementById('menuScreen').classList.remove('active');
+  document.getElementById('chatScreen').classList.remove('active');
+}
+
+function saveApiKey(){
+  const k=document.getElementById('apiKeyInput').value.trim();
+  if(!k){alert('APIキーを入力してください');return;}
+  apiKey=k;
+  localStorage.setItem('sakura_api_key',k);
+  showMenu();
+}
+
+function showMenu(){
+  document.getElementById('apiScreen').style.display='none';
+  document.getElementById('menuScreen').classList.add('active');
+  document.getElementById('keyBtn').style.display='block';
+}
+
+function sysPrompt(){
+  const subTxt=subject==='全部'?'国語・算数・理科・社会・英語の全教科':subject;
+  const ni=studentName?`生徒の名前は「${studentName}」。必ず名前で呼ぶこと。`:'生徒の名前はまだ不明。';
+  const gi=studentGrade?`生徒は${studentGrade}。この学年に合った言葉・難易度で教えること。`:'学年はまだ不明。';
+  const gt=studentGrade?(GRADE_TIPS[studentGrade]||''):'';
+  return `あなたは「さくら先生」という名前の明るく元気で優しい女性の家庭教師です。小学生（1〜6年生）に${subTxt}を教えています。
+
+【生徒情報】${ni} ${gi}${gt?'\n【学年のポイント】'+gt:''}
+
+【キャラクター】
+- 語尾は「〜だよ」「〜だね」「〜しよう！」を自然に使う
+- 生徒の名前がわかったら必ず名前で呼ぶ（例：「○○くん、すごいね！」「○○さん、いい質問だね！」）
+- 「よくできた！」「いい質問だね！」「がんばってるね！」など励ます
+- 学年に合った言葉と難易度で説明する
+- 絵文字を適度に使う（🌸✨⭐🎉など）
+- 間違えても「惜しい！」「もう少しだよ！」と前向きに返す
+- 答えたあとは「もっと知りたい？」「次の問題もやってみる？」と続きを促す
+- クイズや問題を積極的に出す
+- 学年より難しい内容は「もう少し上の学年で習うよ」と優しく伝える`;
+}
+
+function selectSubj(btn){
+  document.querySelectorAll('.subj-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');subject=btn.dataset.s;
+  document.getElementById('startBtn').disabled=false;
+}
+
+function startChat(){
+  if(!subject)return;
+  msgs=[];studentName='';studentGrade='';
+  document.getElementById('menuScreen').classList.remove('active');
+  document.getElementById('chatScreen').classList.add('active');
+  document.getElementById('nowLabel').textContent='いま：'+EMOJIS[subject]+' '+subject;
+  document.getElementById('studentBadge').style.display='none';
+  buildQuickRow();
+  document.getElementById('messages').innerHTML='';
+  addMsg('assistant','こんにちは！わたしはさくら先生だよ🌸\n'+subject+'の勉強、いっしょにがんばろうね！\n\nまず自己紹介してくれるかな？\n名前と学年を教えてね✨');
+  setupVoice();
+}
+
+function goBack(){
+  document.getElementById('chatScreen').classList.remove('active');
+  document.getElementById('menuScreen').classList.add('active');
+  document.getElementById('subjPicker').classList.remove('open');
+}
+
+function buildQuickRow(){
+  const qr=document.getElementById('quickRow');qr.innerHTML='';
+  const cb=document.createElement('button');
+  cb.className='change-btn';cb.id='changeBtn';
+  cb.textContent=EMOJIS[subject]+' 教科を変える ▲';
+  cb.onclick=togglePicker;qr.appendChild(cb);
+  (QUICK[subject]||[]).forEach(q=>{
+    const b=document.createElement('button');b.className='qbtn';b.textContent=q;
+    b.onclick=()=>sendMsg(q);qr.appendChild(b);
+  });
+  document.querySelectorAll('.picker-btn').forEach(b=>b.classList.toggle('sel',b.dataset.s===subject));
+}
+
+function togglePicker(){
+  const p=document.getElementById('subjPicker');
+  p.classList.toggle('open');
+  document.getElementById('changeBtn').classList.toggle('open',p.classList.contains('open'));
+}
+
+function changeSubj(btn){
+  subject=btn.dataset.s;
+  document.getElementById('subjPicker').classList.remove('open');
+  document.getElementById('changeBtn').classList.remove('open');
+  buildQuickRow();
+  document.getElementById('nowLabel').textContent='いま：'+EMOJIS[subject]+' '+subject;
+  const name=studentName?studentName+'、':'';
+  addMsg('assistant',name+'教科を「'+subject+'」に変えたよ🌸\nなにか聞いてみてね！');
+}
+
+function addMsg(role,text){
+  const el=document.getElementById('messages');
+  const d=document.createElement('div');d.className='msg '+role;
+  d.innerHTML=`<div class="msg-av">${role==='user'?'👦':'🌸'}</div><div class="bubble">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+  msgs.push({role,content:text});
+}
+
+function showTyping(){
+  const el=document.getElementById('messages');
+  const d=document.createElement('div');d.className='msg assistant';d.id='typing';
+  d.innerHTML='<div class="msg-av">🌸</div><div class="typing-bubble">💭 考え中…</div>';
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+
+function extractInfo(text){
+  if(!studentName){const m=text.match(/([ぁ-んァ-ン一-龯a-zA-Z]{1,6})(くん|さん|ちゃん)/);if(m){studentName=m[1];updateBadge();}}
+  if(!studentGrade){const m=text.match(/(小学[1-6]年生|中学[1-3]年生)/);if(m){studentGrade=m[1];updateBadge();}}
+}
+function updateBadge(){
+  const b=document.getElementById('studentBadge');
+  if(studentName||studentGrade){
+    b.style.display='block';
+    b.innerHTML=(studentName?'👤 '+studentName+'<br>':'')+(studentGrade?'📚 '+studentGrade:'');
+  }
+}
+
+async function sendMsg(text){
+  const inp=document.getElementById('txtInput');
+  const msg=text||inp.value.trim();
+  if(!msg||loading)return;
+  if(!text){inp.value='';inp.style.height='';updateSend();}
+  document.getElementById('subjPicker').classList.remove('open');
+  addMsg('user',msg);
+  loading=true;document.getElementById('sendBtn').disabled=true;
+  showTyping();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system:sysPrompt(),
+        messages:msgs.slice(-14).map(m=>({role:m.role,content:m.content}))
+      })
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(err.error?.message||'APIエラー '+res.status);
+    }
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'（返事がなかったよ）';
+    removeTyping();extractInfo(reply);addMsg('assistant',reply);
+  }catch(e){
+    removeTyping();
+    addMsg('assistant','ごめんね、うまくつながれなかったよ😢\n\nエラー：'+e.message+'\n\nAPIキーを確認してみてね。右上の「🔑 APIキー」ボタンで変更できるよ！');
+  }
+  loading=false;document.getElementById('sendBtn').disabled=false;
+}
+
+function updateSend(){document.getElementById('sendBtn').disabled=!document.getElementById('txtInput').value.trim();}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,90)+'px';}
+
+function setupVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById('voiceBtn').style.display='none';return;}
+  recog=new SR();recog.lang='ja-JP';recog.continuous=false;recog.interimResults=false;
+  recog.onresult=e=>{sendMsg(e.results[0][0].transcript);isRec=false;updVoiceBtn();};
+  recog.onend=()=>{isRec=false;updVoiceBtn();};
+  recog.onerror=()=>{isRec=false;updVoiceBtn();};
+}
+function toggleVoice(){
+  if(!recog)return;
+  if(isRec){recog.stop();isRec=false;}else{recog.start();isRec=true;}
+  updVoiceBtn();
+}
+function updVoiceBtn(){
+  const b=document.getElementById('voiceBtn');
+  b.textContent=isRec?'🔴 録音中':'🎤 音声';
+  b.classList.toggle('rec',isRec);
+}
+
+document.addEventListener('click',e=>{
+  const qa=document.getElementById('quickArea');
+  if(qa&&!qa.contains(e.target)){
+    document.getElementById('subjPicker').classList.remove('open');
+    const cb=document.getElementById('changeBtn');
+    if(cb)cb.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>
