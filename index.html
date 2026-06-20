@@ -252,6 +252,7 @@ let modalGrade='',modalGender='',editingIndex=-1;
 window.onload=()=>{
   apiKey=localStorage.getItem('sakura_api_key')||'';
   profiles=JSON.parse(localStorage.getItem('sakura_profiles')||'[]');
+  currentProfile=null;
   if(apiKey){document.getElementById('keyBtn').style.display='block';showScreen('profileScreen');renderProfiles();}
 };
 
@@ -274,6 +275,7 @@ function saveProfiles(){localStorage.setItem('sakura_profiles',JSON.stringify(pr
 function renderProfiles(){
   const list=document.getElementById('profileList');
   list.innerHTML='';
+  document.getElementById('profileStartBtn').disabled=!currentProfile;
   if(profiles.length===0){
     list.innerHTML='<div style="text-align:center;color:#aaa;font-size:13px;padding:16px;">まだ登録されていないよ！<br>下のボタンから追加してね🌸</div>';
   }
