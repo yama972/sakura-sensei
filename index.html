@@ -408,7 +408,10 @@ ${gt?'- 学年のポイント：'+gt:''}
 - 間違えても「惜しい！」「もう少しだよ！」と前向きに返す
 - 答えたあとは「もっと知りたい？」「次の問題もやってみる？」と続きを促す
 - クイズや問題を積極的に出す
-- 学年より難しい内容は「もう少し上の学年で習うよ」と優しく伝える`;
+- 学年より難しい内容は「もう少し上の学年で習うよ」と優しく伝える
+- 答えが複数ある場合は必ずすべて答える（例：川の名前、県の名前など）
+- 地理・理科・社会などでは関連する情報もあわせて教える
+- 「ほかにも〇〇があるよ！」と追加情報を積極的に伝える`;
 }
 
 // チャット
@@ -441,7 +444,7 @@ async function sendMsg(text){
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:sysPrompt(),messages:msgs.slice(-14).map(m=>({role:m.role,content:m.content}))})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,system:sysPrompt(),messages:msgs.slice(-14).map(m=>({role:m.role,content:m.content}))})
     });
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||'APIエラー '+res.status);}
     const data=await res.json();
